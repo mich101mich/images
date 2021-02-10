@@ -7,5 +7,8 @@ module.exports = {
 		filename: "[name].js",
 		path: path.resolve(__dirname, "docs")
 	},
-	mode: "production"
+	optimization: {
+		namedChunks: true,
+		namedModules: true,
+	}
 };
