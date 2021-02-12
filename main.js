@@ -54,16 +54,28 @@ async function init() {
 		ids.push(doc.id);
 	});
 	finished = true;
-	submit.disabled = false;
 }
 
 init().catch(console.error);
 
+let lastQuery = "";
+
 /**
  * @param {string} input
  */
-async function findString(input) {
-	submit.disabled = scaleSlider.disabled = true;
+async function findString(input, force = false) {
+	if (!finished || input.length < 3) {
+		return;
+	}
+	if (!force && lastQuery == input) {
+		return;
+	}
+	lastQuery = input;
+
+	input = input.toLowerCase();
+
+	finished = false;
+	checkEnabled();
 
 	canvas.forEach(c => c.hidden = true);
 
@@ -85,13 +97,21 @@ async function findString(input) {
 
 	await Promise.all(found.map((id, i) => showImage(id, canvas[i], trimmed, start, end)));
 
-	submit.disabled = scaleSlider.disabled = false;
+	finished = true;
+	checkEnabled();
 }
 
+function checkEnabled() {
+	const submitEnabled = finished && search.value.trim().length >= 3 && search.value != lastQuery;
+	const sliderEnabled = finished && lastQuery.length >= 3;
+	submit.disabled = !submitEnabled;
+	scaleSlider.disabled = !sliderEnabled;
+}
+
+search.addEventListener("input", checkEnabled);
+
 form.onsubmit = (e) => {
-	if (finished) {
-		findString(search.value.toLowerCase()).catch(console.error)
-	}
+	findString(search.value).catch(console.error)
 
 	e.preventDefault();
 	return false;
@@ -108,8 +128,8 @@ function resize(redraw) {
 		can.style.width = width + "px";
 		can.style.height = height + "px";
 	}
-	if (finished && redraw) {
-		findString(search.value.toLowerCase()).catch(console.error)
+	if (redraw) {
+		findString(lastQuery, true).catch(console.error)
 	}
 }
 
